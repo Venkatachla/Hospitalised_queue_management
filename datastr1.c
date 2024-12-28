@@ -18,35 +18,41 @@ Staff staff_account[MAX_STAFF] = {
     {"Veeresh", "veeresh"}
 };
 
-typedef enum {
-    COMMON_COLD = 1,
-    FLU,
-    MINOR_INJURY,
-    BRONCHITIS,
-    FRACTURE,
-    SEVERE_INFECTION,
-    DIABETES,
-    CARDIAC_ARREST,
-    MAJOR_TRAUMA,
-    LIFE_THREATENING
+typedef enum DiseaseSeverity{
+    Headache = 1,
+    Viral_Fever,
+    Infection,         
+    Diabetes_Checkup,
+    Fracture,
+    Chest_Pain,
+    Cancer,
+    Severe_Wound,
+    Heart_Attack,
+    Stroke,
 } DiseaseSeverity;
 
-const char* diseasesNames[] = {
-  "Common cold/Headache",
-    "Viral Fever",
-    "Infection",         
-    "Diabetes Checkup",
-    "Fracture",
-    "Chest pain",
-    "Cancer",
-    "Severe wound/Bleeding",
-    "Heart attack",
+const char* diseasesNames(DiseaseSeverity Severity)  {
+    switch(Severity){
+        case 1: return "Headache";
+        case 2: return "Viral Fever";
+        case 3: return "Infection";
+        case 4: return "Diabetes Checkup";
+        case 5: return "Fracture";
+        case 6: return "Chest pain";
+        case 7: return "Cancer";
+        case 8: return "Severe wound";
+        case 9: return "Heart attack";
+        case 10: return "Stroke";
+        default: return "Unknown Disease";
+    }  
 };
+
 typedef enum {
     Male = 0,
     Female,
     Other
 } Sex;
+
 const char* getSexString(Sex sex) {
     switch (sex) {
         case 0: return "Male";
@@ -56,6 +62,7 @@ const char* getSexString(Sex sex) {
     }
 }
 
+typedef struct node *nodePointer;
 typedef struct node {
     char name[50];
     int age;
@@ -67,22 +74,21 @@ typedef struct node {
     int waiting_time;
     int urgency;
     float priority;
-    struct node* next;
-} Node;
+    nodePointer link;
+} node;
 
-Node* start = NULL;
+nodePointer start = NULL;
 int current_id = 1;
 float w1 = 0.5, w2 = 0.3, w3 = 0.2;
 
 int login();
-float calculatePriority(Node* p);
-void addPatient();
-void treatPatients();
+float calculatePriority(nodePointer *p);
+void addPatient(nodePointer *start);
+void treatPatients(nodePointer *start);
 void sort_queue();
 void hospitalManagement();
-void view_queue();
-void insertPatient(Node* p);
-void deletePatient();
+void view_queue(nodePointer start);
+
 
 void table();
 
@@ -123,13 +129,13 @@ void hospitalManagement() {
         scanf("%d", &choice);
         switch (choice) {
             case 1:
-                addPatient();
+                addPatient(&start);
                 break;
             case 2:
-                view_queue();
+                view_queue(start);
                 break;
             case 3:
-                treatPatients();
+                treatPatients(&start);
                 break;
             case 4:
                 printf("Exiting the system\n");
@@ -138,69 +144,71 @@ void hospitalManagement() {
     }
 }
 
-float calculatePriority(Node* p) {
-    return w1 * p->severity + w2 * p->waiting_time + w3 * p->urgency;
+float calculatePriority(nodePointer *p) {
+    return w1 * (*p)->severity + w2 * (*p)->waiting_time + w3 * (*p)->urgency;
 }
 
-void addPatient() {
-    Node patient;
-    patient.id = current_id++;
+void addPatient(nodePointer *start) {
+    nodePointer patient = (nodePointer)malloc(sizeof(node));
+    if(patient == NULL) {
+        fprintf(stderr,"Memory Allocation Failed\n");
+        exit(1);
+    }
+    patient->link = NULL;
+    patient->id = current_id++;
     printf("\nEnter name: ");
-    scanf("%s", patient.name);
+    scanf("%s", patient->name);
+
     printf("Enter age: ");
-    scanf("%d", &patient.age);
+    scanf("%d", &patient->age);
+
     printf("Select Gender (0: Male, 1: Female, 2: Other): ");
-    scanf("%d", (int*)&patient.sex);
+    scanf("%d", (int*)&patient->sex);
+
     printf("Enter address: ");
-    scanf(" %[^\n]", patient.address);
+    scanf(" %[^\n]", patient->address);
+
     printf("Enter mobile number: ");
-    scanf("%ld", &patient.mobile_no);
+    scanf("%ld", &patient->mobile_no);
     table();
 
     printf("Select Disease Type (in number): ");
-    scanf("%d", (int*)&patient.severity);
-    printf("Enter Waiting Time (in minutes): ");
-    scanf("%d", &patient.waiting_time);
-    printf("Enter the urgency (1-10): ");
-    scanf("%d", &patient.urgency);
-
-    patient.priority = calculatePriority(&patient);
-    insertPatient(&patient);
-    printf("\nPatient added successfully.\nPatient ID: %d\n", patient.id);
-}
-
-void insertPatient(Node* p) {
-    Node* new_node = (Node*)malloc(sizeof(Node));
-    if (new_node == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
-        exit(1);
+    scanf("%d", (int*)&patient->severity);
+    while(patient->severity<1 || patient->severity>10) {
+        printf("Invalid number. Enter valid number (1-10): ");
+        scanf("%d", (int*)&patient->severity);
     }
 
-    strcpy(new_node->name, p->name);
-    new_node->age = p->age;
-    strcpy(new_node->address, p->address);
-    new_node->mobile_no = p->mobile_no;
-    new_node->id = p->id;
-    new_node->severity = p->severity;
-    new_node->waiting_time = p->waiting_time;
-    new_node->urgency = p->urgency;
-    new_node->priority = p->priority;
-    new_node->next = NULL;
+    printf("Enter Waiting Time (in minutes): ");
+    scanf("%d", &patient->waiting_time);
 
-    if (start == NULL) {
-        start = new_node;
-    } else {
-        Node* temp = start;
-        while (temp->next != NULL) {
-            temp = temp->next;
+    printf("Enter urgency (1-10): ");
+    scanf("%d", &patient->urgency);
+    while (patient->urgency < 1 || patient->urgency > 10) {
+        printf("Invalid urgency. Enter a value between 1 and 10: ");
+        scanf("%d", &patient->urgency);
+    }
+
+    patient->priority = calculatePriority(&patient);
+    nodePointer temp;
+    if(*start == NULL) {
+        *start = patient;
+    }
+    else {
+        temp = *start;
+        while (temp->link != NULL) {
+            temp = temp->link;
         }
-        temp->next = new_node;
+        temp->link = patient;
     }
     sort_queue();
+
+    printf("\nPatient added successfully.\nPatient ID: %d\n", patient->id);
 }
 
-void view_queue() {
-    Node* ptr = start;
+
+void view_queue(nodePointer start) {
+    nodePointer ptr = start;
     if (start == NULL) {
         printf("\nThere are no patients in the queue\n");
         return;
@@ -209,17 +217,17 @@ void view_queue() {
     while (ptr != NULL) {
         printf("Name: %s\nAge: %d\nAddress: %s\nPhone: %ld\nPriority: %.2f\n", ptr->name, ptr->age, ptr->address, ptr->mobile_no, ptr->priority);
         printf("---------------------------------------------------\n");
-        ptr = ptr->next;
+        ptr = ptr->link;
     }
 }
 
-void treatPatients() {
-    if (start == NULL) {
+void treatPatients(nodePointer *start) {
+    if (*start == NULL) {
         printf("No patients to treat\n");
         return;
     }
 
-    Node* temp = start;
+    nodePointer temp = *start;
     printf("Treating patient: %s (ID: %d)\n", temp->name, temp->id);
     FILE *file = fopen("output.csv", "a");
 
@@ -229,43 +237,43 @@ void treatPatients() {
     }
     static int count=0;
     // Write column headers if the file is empty
-    if (count == 0) {
-        fprintf(file, "Name, Age, Gender, Address, Phone Number, Disease\n");
-        count++;
-    }
+    // if (count == 0) {
+    //     fprintf(file, "Name, Age, Gender, Address, Phone Number, Disease\n");
+    //     count++;
+    // }
 
     // Write patient details to file
-    fprintf(file, "%s, %d, %s, %s, %ld, %s\n", temp->name, temp->age, getSexString(temp->sex), temp->address, temp->mobile_no, diseasesNames[temp->severity]);
+    fprintf(file, "%s, %d, %s, %s, %ld, %s\n", temp->name, temp->age, getSexString(temp->sex), temp->address, temp->mobile_no, diseasesNames(temp->severity));
 
     // Close the file
     fclose(file);
-    start = start->next;
+    *start = temp->link;
     free(temp);
     sort_queue();
 }
 void sort_queue() {
-    if (start == NULL || start->next == NULL) {
+    if (start == NULL || start->link == NULL) {
         return;  // No need to sort if the list is empty or has only one element
     }
 
-    Node* sorted = NULL;  // This will hold the sorted list
-    Node* current = start;  // Start from the original unsorted list
+    nodePointer sorted = NULL;  // This will hold the sorted list
+    nodePointer current = start;  // Start from the original unsorted list
 
     // Iterate through the unsorted list and insert each node into the sorted list
     while (current != NULL) {
-        Node* next_node = current->next;  // Save the next node, because we will modify the 'current' node
+        nodePointer next_node = current->link;  // Save the next node, because we will modify the 'current' node
 
         // Insert 'current' node into the sorted list
         if (sorted == NULL || current->priority > sorted->priority) {
-            current->next = sorted;  // Point 'current' node to the previous sorted list
+            current->link = sorted;  // Point 'current' node to the previous sorted list
             sorted = current;  // Make 'current' the new head of the sorted list
         } else {
-            Node* temp = sorted;
-            while (temp->next != NULL && temp->next->priority >= current->priority) {
-                temp = temp->next;  // Traverse to the right spot based on priority
+            nodePointer temp = sorted;
+            while (temp->link != NULL && temp->link->priority >= current->priority) {
+                temp = temp->link;  // Traverse to the right spot based on priority
             }
-            current->next = temp->next;  // Insert 'current' node after 'temp'
-            temp->next = current;  // Update the 'temp' node's next pointer to point to 'current'
+            current->link = temp->link;  // Insert 'current' node after 'temp'
+            temp->link = current;  // Update the 'temp' node's next pointer to point to 'current'
         }
         current = next_node;  // Move to the next node in the unsorted list
     }
@@ -274,14 +282,14 @@ void sort_queue() {
 
 void table() {
     printf("----Please Refer this Table for your disease!\n");
-    printf("1. Common Cold/Headache\n");
+    printf("1. Headache\n");
     printf("2. Viral Fever\n");
     printf("3. Infection\n");
     printf("4. Diabetes Checkup\n");
     printf("5. Fracture\n");
     printf("6. Chest pain\n");
     printf("7. Cancer\n");
-    printf("8. Severe wound/Bleeding\n");
+    printf("8. Severe wound\n");
     printf("9. Heart attack\n");
-    printf("10-Stroke\n");
+    printf("10. Stroke\n");
 }
