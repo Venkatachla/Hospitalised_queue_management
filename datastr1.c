@@ -88,8 +88,6 @@ void treatPatients(nodePointer *start);
 void sort_queue();
 void hospitalManagement();
 void view_queue(nodePointer start);
-
-
 void table();
 
 int main() {
@@ -110,7 +108,6 @@ int login() {
     scanf("%s", name);
     printf("Enter password: ");
     scanf("%s", password);
-
     for (int i = 0; i < MAX_STAFF; i++) {
         if (strcmp(name, staff_account[i].name) == 0 && strcmp(password, staff_account[i].password) == 0) {
             return 1;
@@ -205,7 +202,6 @@ void addPatient(nodePointer *start) {
 
     printf("\nPatient added successfully.\nPatient ID: %d\n", patient->id);
 }
-
 
 void view_queue(nodePointer start) {
     nodePointer ptr = start;
